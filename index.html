@@ -2,10 +2,36 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>二房东租客管理系统</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="租客管家">
+<meta name="theme-color" content="#1F4E78">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<title>租客管家</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+  /* ── iOS PWA 安装提示 ──────────────────────── */
+  .pwa-banner {
+    display: none;
+    background: #FFF3CD;
+    border-bottom: 1px solid #E6D5A8;
+    padding: 10px 16px;
+    font-size: 12px;
+    text-align: center;
+    color: #856404;
+    position: relative;
+  }
+  .pwa-banner.show { display: block; }
+  .pwa-banner .close-banner {
+    position: absolute; right: 12px; top: 8px;
+    background: none; border: none; font-size: 16px;
+    cursor: pointer; color: #856404; padding: 0 4px;
+  }
+  /* ── 主样式 ────────────────────────────────── */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 13px; background: #f5f5f5; color: #1a1a1a; }
 
@@ -130,15 +156,32 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   @media (max-width: 768px) {
-    .summary-bar { grid-template-columns: repeat(3, 1fr); }
-    .header { flex-wrap: wrap; gap: 10px; }
-    .modal { width: 95vw; }
+    body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .summary-bar { grid-template-columns: repeat(3, 1fr); padding: 10px 12px; gap: 6px; }
+    .stat-value { font-size: 16px; }
+    .stat-label { font-size: 10px; }
+    .header { flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
+    .header h1 { font-size: 14px; }
+    .header-actions { gap: 4px; }
+    .btn { padding: 5px 10px; font-size: 11px; border-radius: 5px; }
+    .modal { width: 95vw; padding: 16px; }
     .form-grid { grid-template-columns: 1fr; }
     .cost-summary-bar { grid-template-columns: repeat(2,1fr); }
+    .tabs { padding: 0 8px; overflow-x: auto; }
+    .tab { padding: 8px 10px; font-size: 12px; white-space: nowrap; }
+    .content { padding: 12px 8px; }
+    .toolbar { gap: 6px; }
+    .search-box { min-width: 120px; font-size: 12px; }
   }
 </style>
 </head>
 <body>
+
+<!-- PWA 安装提示 -->
+<div class="pwa-banner" id="pwaBanner">
+  📲 点击下方 <b>分享</b> → <b>添加到主屏幕</b> 即可像 App 一样使用
+  <button class="close-banner" onclick="document.getElementById('pwaBanner').classList.remove('show')">✕</button>
+</div>
 
 <div class="header">
   <div>
@@ -1434,6 +1477,27 @@ loadData();
 const _allH = [...new Set([...Object.keys(costs), ...tenants.map(t=>t.house)])];
 _allH.forEach(h => { if (!expenses[h]) expenses[h] = {water:0, repair:0, forfeit:0}; });
 refreshAll();
+
+// ─── PWA Service Worker ─────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ─── iOS PWA 安装提示 ───────────────────────────────
+(function(){
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (isIOS && !isStandalone && !localStorage.getItem('pwa_banner_dismissed')) {
+    setTimeout(() => {
+      document.getElementById('pwaBanner').classList.add('show');
+    }, 1500);
+  }
+  document.getElementById('pwaBanner').addEventListener('click', function(e){
+    if (e.target.classList.contains('close-banner')) {
+      localStorage.setItem('pwa_banner_dismissed', '1');
+    }
+  });
+})();
 </script>
 </body>
 </html>

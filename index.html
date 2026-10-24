@@ -80,6 +80,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei
 .chip:hover:not(.active){border-color:#2E75B6;color:#2E75B6;}
 
 .table-wrap{overflow-x:auto;border-radius:8px;border:1px solid #e0e0e0;background:#fff;}
+/* ===== 高级筛选 + 表头排序 ===== */
+.adv-filter{background:#F2F6FB;border:1px solid #D6E4F0;border-radius:10px;padding:12px 14px;margin-bottom:12px;}
+.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px 14px;}
+.adv-field label{display:block;font-size:11px;color:#5B7A99;font-weight:600;margin-bottom:4px;}
+.adv-input{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #C9DBEA;border-radius:6px;font-size:12px;background:#fff;color:#1a1a1a;font-family:inherit;}
+.adv-input:focus{outline:none;border-color:#2E75B6;}
+.adv-range{display:flex;align-items:center;gap:4px;}
+.adv-range input{flex:1;min-width:0;}
+.adv-range span{font-size:12px;color:#98A8B8;flex:0 0 auto;}
+.adv-actions{margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.adv-count{font-size:12px;color:#5B7A99;}
+th.sortable{cursor:pointer;user-select:none;transition:background .15s;}
+th.sortable:hover{background:#163A5A !important;}
+th.no-sort{cursor:default;}
+.sort-ind{display:inline-block;margin-left:3px;font-size:9px;color:#FFD966;vertical-align:middle;}
 table{width:100%;border-collapse:collapse;font-size:12px;min-width:1000px;}
 thead th{background:#1F4E78;color:#fff;padding:8px 8px;text-align:center;font-weight:500;font-size:11px;position:sticky;top:0;z-index:2;white-space:nowrap;}
 tbody tr{border-bottom:1px solid #eee;}
@@ -256,6 +271,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
   .tab{padding:8px 10px;font-size:12px;white-space:nowrap;}
   .content{padding:10px 8px;}
   .toolbar{gap:6px;}
+  .adv-grid{grid-template-columns:1fr;}
   .search-box{min-width:120px;font-size:12px;}
   .contract-preview{padding:20px 14px;font-size:11px;}
   .media-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));}
@@ -320,11 +336,14 @@ textarea.form-input{resize:vertical;min-height:70px;}
   <div class="toolbar">
     <input class="search-box" id="searchBox" placeholder="搜索租客姓名、房号、手机号..." oninput="renderTable()">
     <select class="filter-select" id="filterHouse" onchange="renderTable()"><option value="">全部房源</option></select>
-    <select class="filter-select" id="filterSort" onchange="renderTable()">
+    <select class="filter-select" id="filterSort" onchange="onSortSelectChange()">
       <option value="house">按房号排序</option>
       <option value="expire">按到期日排序</option>
       <option value="rent">按月租金排序</option>
+      <option value="header">表头排序（自定义）</option>
     </select>
+    <button class="btn btn-outline btn-xs" id="advToggleBtn" onclick="toggleAdvPanel()">🔽 高级筛选</button>
+    <button class="btn btn-outline btn-xs" onclick="exportCurrentExcel()">📤 导出当前</button>
     <div class="filter-chips">
       <span class="chip" onclick="toggleFilter('overdue',this)">⚠️ 欠费</span>
       <span class="chip" onclick="toggleFilter('paid',this)">✅ 已缴费</span>
@@ -332,14 +351,97 @@ textarea.form-input{resize:vertical;min-height:70px;}
     </div>
     <span id="rowCount" style="font-size:12px;color:#888;"></span>
   </div>
+
+  <!-- 高级筛选面板（9 字段，多条件 AND） -->
+  <div class="adv-filter" id="advFilterPanel" style="display:none;">
+    <div class="adv-grid">
+      <div class="adv-field">
+        <label>① 房号（关键词）</label>
+        <input id="flt-house" class="adv-input" placeholder="输入房号，如 温泉城4" oninput="renderTable()">
+      </div>
+      <div class="adv-field">
+        <label>② 户型</label>
+        <select id="flt-room" class="adv-input" onchange="renderTable()"><option value="">全部户型</option></select>
+      </div>
+      <div class="adv-field">
+        <label>③ 租客手机号</label>
+        <input id="flt-phone" class="adv-input" placeholder="输入手机号片段" oninput="renderTable()">
+      </div>
+      <div class="adv-field">
+        <label>④ 起租日期（区间）</label>
+        <div class="adv-range">
+          <input type="date" id="flt-start1" class="adv-input" onchange="renderTable()">
+          <span>~</span>
+          <input type="date" id="flt-start2" class="adv-input" onchange="renderTable()">
+        </div>
+      </div>
+      <div class="adv-field">
+        <label>⑤ 到期日期（区间）</label>
+        <div class="adv-range">
+          <input type="date" id="flt-end1" class="adv-input" onchange="renderTable()">
+          <span>~</span>
+          <input type="date" id="flt-end2" class="adv-input" onchange="renderTable()">
+        </div>
+      </div>
+      <div class="adv-field">
+        <label>⑥ 租房方式</label>
+        <select id="flt-paytype" class="adv-input" onchange="renderTable()">
+          <option value="">全部方式</option>
+          <option value="押一付一">押一付一</option>
+          <option value="押一付二">押一付二</option>
+          <option value="押一付三">押一付三</option>
+          <option value="押一付四">押一付四</option>
+        </select>
+      </div>
+      <div class="adv-field">
+        <label>⑦ 下次收租日（区间）</label>
+        <div class="adv-range">
+          <input type="date" id="flt-next1" class="adv-input" onchange="renderTable()">
+          <span>~</span>
+          <input type="date" id="flt-next2" class="adv-input" onchange="renderTable()">
+        </div>
+      </div>
+      <div class="adv-field">
+        <label>⑧ 押金（金额区间）</label>
+        <div class="adv-range">
+          <input type="number" id="flt-dep1" class="adv-input" placeholder="最小" oninput="renderTable()">
+          <span>~</span>
+          <input type="number" id="flt-dep2" class="adv-input" placeholder="最大" oninput="renderTable()">
+        </div>
+      </div>
+      <div class="adv-field">
+        <label>⑨ 月租金（金额区间）</label>
+        <div class="adv-range">
+          <input type="number" id="flt-rent1" class="adv-input" placeholder="最小" oninput="renderTable()">
+          <span>~</span>
+          <input type="number" id="flt-rent2" class="adv-input" placeholder="最大" oninput="renderTable()">
+        </div>
+      </div>
+    </div>
+    <div class="adv-actions">
+      <button class="btn btn-outline btn-xs" onclick="resetAdvFilters()">🧹 重置筛选与排序</button>
+      <span id="advCount" class="adv-count"></span>
+    </div>
+  </div>
+
   <div class="table-wrap">
     <table id="mainTable">
       <thead>
         <tr>
-          <th>#</th><th>房号</th><th>户型</th><th>租客姓名</th><th>手机号</th>
-          <th>起租日期</th><th>到期日期</th><th>租房方式</th><th>下次收租</th>
-          <th>押金(元)</th><th>月租金(元)</th><th>水燃网络(元)</th><th>当月收款(元)</th>
-          <th style="min-width:200px;">操作</th>
+          <th class="no-sort">#</th>
+          <th class="sortable" onclick="sortBy('house')">房号<span class="sort-ind" id="si-house"></span></th>
+          <th class="sortable" onclick="sortBy('room')">户型<span class="sort-ind" id="si-room"></span></th>
+          <th class="sortable" onclick="sortBy('name')">租客姓名<span class="sort-ind" id="si-name"></span></th>
+          <th class="sortable" onclick="sortBy('phone')">手机号<span class="sort-ind" id="si-phone"></span></th>
+          <th class="sortable" onclick="sortBy('start')">起租日期<span class="sort-ind" id="si-start"></span></th>
+          <th class="sortable" onclick="sortBy('end')">到期日期<span class="sort-ind" id="si-end"></span></th>
+          <th class="sortable" onclick="sortBy('paytype')">租房方式<span class="sort-ind" id="si-paytype"></span></th>
+          <th class="sortable" onclick="sortBy('nextrent')">下次收租<span class="sort-ind" id="si-nextrent"></span></th>
+          <th class="sortable" onclick="sortBy('deposit')">押金(元)<span class="sort-ind" id="si-deposit"></span></th>
+          <th class="sortable" onclick="sortBy('rent')">月租金(元)<span class="sort-ind" id="si-rent"></span></th>
+          <th class="sortable" onclick="sortBy('util')">水燃网络(元)<span class="sort-ind" id="si-util"></span></th>
+          <th class="sortable" onclick="sortBy('received')">当月收款(元)<span class="sort-ind" id="si-received"></span></th>
+          <th class="no-sort" style="min-width:200px;">操作</th>
         </tr>
       </thead>
       <tbody id="mainTbody"></tbody>
@@ -429,7 +531,7 @@ textarea.form-input{resize:vertical;min-height:70px;}
   <div class="section-title">各房源租金差明细（月净利 = 收入 + 水燃收 + 押金违约所得 - 成本租金 - 水电燃气 - 维修费 - 待租费）</div>
   <div class="table-wrap">
     <table id="costTable">
-      <thead><tr><th>房号</th><th>租客数</th><th>月租收入</th><th>收取水燃网络</th><th>成本租金</th><th>水电燃气实付</th><th>维修费用</th><th>押金违约所得</th><th>待租费用</th><th>月净利润</th><th>利润率</th></tr></thead>
+      <thead><tr><th>房号</th><th>租客数</th><th>月租收入</th><th>收取水燃网络</th><th>成本租金</th><th>水电燃气实付</th><th>维修费用</th><th>押金违约所得</th><th>月净利润</th><th>利润率</th></tr></thead>
       <tbody id="costTbody"></tbody>
     </table>
   </div>
@@ -897,74 +999,137 @@ function saveData() {
 }
 
 // ============================================================
-// 初始化内置数据
+// 初始化内置数据（数据源：租客信息_20261023.xlsx）
 // ============================================================
+const DATA_VER = '20261023';
 function initDefaultData() {
   const defaultCosts = {
-    '邓家沟高铁还房14-2201': 900, '黄坡坎19-402': 850, '蔷薇西岸12-803': 1034,
-    '时代广场7-1705': 1200, '温泉城12-1403': 1250, '温泉城12-203': 1134,
-    '温泉城15-3105': 1150, '温泉城16-1707': 1134, '温泉城17-1709': 850,
-    '温泉城4-1206': 1050, '温泉城4-1402': 1200, '温泉城4-1406': 1034,
-    '温泉城4栋1002': 1100, '富力尚悦居': 930, '温泉城4栋2002': 1200
+    '邓家沟高铁还房14-2201': 900,
+    '黄坡坎19-402': 850,
+    '蔷薇西岸12-803': 1034,
+    '时代广场7-1705': 1200,
+    '温泉城12-1403': 1250,
+    '温泉城12-203': 1134,
+    '温泉城15-3105': 1150,
+    '温泉城16-1707': 1134,
+    '温泉城17-1709': 850,
+    '温泉城4-1206': 1050,
+    '温泉城4-1402': 1200,
+    '温泉城4-1406': 1034,
+    '温泉城4栋1002': 1100,
+    '富力尚悦居': 0,
+    '温泉城4栋2002': 1200,
+    '富力尚悦居6栋10-1': 930,
+    '温泉城14栋6-3': 950,
+    '温泉城16栋31-7': 915,
+    '温泉城7栋27-5': 780
   };
-  if (!localStorage.getItem('rental_costs')) { costs = defaultCosts; localStorage.setItem('rental_costs', JSON.stringify(costs)); }
-  if (!localStorage.getItem('rental_tenants')) {
-    tenants = [
-      { house:'温泉城12-1403', room:'B房间', name:'宗小平', phone:'', start:'2025-10-30', end:'2026-03-30', paytype:'押一付一', nextrent:'2026-01-30', deposit:680, rent:680, util:75, received:755 },
-      { house:'温泉城12-203', room:'D房间', name:'昂旺曲珍', phone:'', start:'2025-12-02', end:'2026-04-01', paytype:'押一付三', nextrent:'2026-03-02', deposit:520, rent:420, util:100, received:2080 },
-      { house:'温泉城12-1403', room:'A房间', name:'张贵川', phone:'', start:'2026-03-03', end:'2026-04-03', paytype:'押一付一', nextrent:'', deposit:500, rent:500, util:100, received:600 },
-      { house:'温泉城4-1206', room:'B房间', name:'徐杨', phone:'', start:'2025-09-05', end:'2026-04-05', paytype:'押一付一', nextrent:'2026-01-05', deposit:570, rent:570, util:100, received:670 },
-      { house:'时代广场7-1705', room:'C房间', name:'石海兵', phone:'', start:'2025-10-12', end:'2026-04-12', paytype:'押一付三', nextrent:'2026-01-12', deposit:800, rent:700, util:100, received:0 },
-      { house:'温泉城17-1709', room:'整租', name:'宥生春', phone:'', start:'2025-10-18', end:'2026-04-18', paytype:'押一付三', nextrent:'2026-01-18', deposit:1000, rent:1666, util:0, received:6000 },
-      { house:'温泉城4栋1002', room:'B房间', name:'岑嘉权', phone:'', start:'2025-04-19', end:'2026-04-19', paytype:'押一付一', nextrent:'2026-01-19', deposit:580, rent:580, util:100, received:680 },
-      { house:'温泉城16-1707', room:'D房间', name:'黄春海', phone:'', start:'2025-03-29', end:'2026-04-29', paytype:'押一付一', nextrent:'2026-01-29', deposit:600, rent:600, util:100, received:700 },
-      { house:'温泉城4-1206', room:'C房间', name:'邓达伟', phone:'', start:'2025-09-01', end:'2026-04-30', paytype:'押一付一', nextrent:'2026-01-01', deposit:580, rent:580, util:100, received:680 },
-      { house:'温泉城4-1402', room:'B房间', name:'张利强', phone:'', start:'2025-04-30', end:'2026-04-30', paytype:'押一付一', nextrent:'2026-01-30', deposit:550, rent:550, util:100, received:650 },
-      { house:'温泉城4栋1002', room:'D房间', name:'陈灶', phone:'', start:'2025-10-30', end:'2026-04-30', paytype:'押一付一', nextrent:'2026-01-30', deposit:480, rent:480, util:100, received:580 },
-      { house:'温泉城16-1707', room:'B房间', name:'刁杰', phone:'', start:'2025-03-31', end:'2026-04-30', paytype:'押一付一', nextrent:'2026-01-30', deposit:680, rent:680, util:100, received:780 },
-      { house:'富力尚悦居', room:'整租', name:'黄蔡健', phone:'', start:'2026-03-05', end:'2026-05-05', paytype:'押一付二', nextrent:'', deposit:2000, rent:1600, util:0, received:0 },
-      { house:'温泉城4-1206', room:'A房间', name:'程智航', phone:'', start:'2025-12-14', end:'2026-05-14', paytype:'押一付四', nextrent:'2026-04-14', deposit:550, rent:450, util:100, received:2750 },
-      { house:'温泉城15-3105', room:'B房间', name:'马吉', phone:'', start:'2025-11-15', end:'2026-05-15', paytype:'押一付三', nextrent:'2026-02-15', deposit:700, rent:700, util:100, received:0 },
-      { house:'温泉城15-3105', room:'C房间', name:'余梓瑗', phone:'', start:'2025-11-15', end:'2026-05-15', paytype:'押一付三', nextrent:'2026-02-15', deposit:680, rent:580, util:100, received:0 },
-      { house:'温泉城12-203', room:'B房间', name:'彭雪娇', phone:'', start:'2026-02-06', end:'2026-06-06', paytype:'押一付一', nextrent:'2026-01-15', deposit:680, rent:680, util:100, received:780 },
-      { house:'温泉城4栋1002', room:'A房间', name:'经孝兰', phone:'', start:'2026-03-22', end:'2026-06-22', paytype:'押一付一', nextrent:'2026-01-10', deposit:560, rent:560, util:70, received:660 },
-      { house:'邓家沟高铁还房14-2201', room:'A房间', name:'龙宏', phone:'', start:'2026-03-24', end:'2026-06-24', paytype:'押一付一', nextrent:'2026-01-22', deposit:530, rent:430, util:100, received:1030 },
-      { house:'蔷薇西岸12-803', room:'C房间', name:'何本州', phone:'', start:'2025-11-24', end:'2026-06-24', paytype:'押一付一', nextrent:'2026-01-24', deposit:530, rent:430, util:100, received:530 },
-      { house:'时代广场7-1705', room:'B房间', name:'刘伟兴', phone:'', start:'2025-12-05', end:'2026-07-05', paytype:'押一付三', nextrent:'2026-03-05', deposit:660, rent:560, util:100, received:2640 },
-      { house:'温泉城4-1406', room:'A房间', name:'向鑫杨', phone:'', start:'2026-03-08', end:'2026-07-08', paytype:'押一付一', nextrent:'2026-01-07', deposit:720, rent:620, util:100, received:650 },
-      { house:'温泉城4栋2002', room:'A房间阳台', name:'张琴', phone:'', start:'2026-03-10', end:'2026-07-10', paytype:'押一付一', nextrent:'', deposit:550, rent:550, util:100, received:0 },
-      { house:'温泉城12-203', room:'A房间', name:'邹国智', phone:'', start:'2025-06-16', end:'2026-08-16', paytype:'押一付一', nextrent:'2026-01-16', deposit:530, rent:530, util:100, received:630 },
-      { house:'黄坡坎19-402', room:'B房间', name:'彭咪麟', phone:'', start:'2025-08-31', end:'2026-08-30', paytype:'押一付一', nextrent:'2026-01-30', deposit:480, rent:480, util:100, received:580 },
-      { house:'温泉城16-1707', room:'A房间', name:'刘鑫', phone:'', start:'2025-08-30', end:'2026-08-30', paytype:'押一付一', nextrent:'2026-01-30', deposit:470, rent:470, util:100, received:570 },
-      { house:'蔷薇西岸12-803', room:'B房间', name:'梁萧', phone:'', start:'2025-07-21', end:'2026-08-31', paytype:'押一付一', nextrent:'2026-01-01', deposit:600, rent:600, util:100, received:700 },
-      { house:'温泉城4-1406', room:'D房间', name:'李豪', phone:'', start:'2026-03-08', end:'2026-09-08', paytype:'押一付一', nextrent:'2026-01-07', deposit:580, rent:480, util:100, received:1030 },
-      { house:'温泉城4栋2002', room:'D房间次卧', name:'黎原龙', phone:'', start:'2026-03-15', end:'2026-09-15', paytype:'押一付三', nextrent:'', deposit:450, rent:450, util:100, received:0 },
-      { house:'温泉城16-1707', room:'C房间', name:'谢聪', phone:'', start:'2026-03-16', end:'2026-09-16', paytype:'押一付一', nextrent:'', deposit:0, rent:0, util:0, received:670 },
-      { house:'黄坡坎19-402', room:'A房间', name:'汤宏林', phone:'', start:'2026-04-11', end:'2026-10-11', paytype:'押一付一', nextrent:'2026-01-10', deposit:630, rent:530, util:100, received:1260 },
-      { house:'时代广场7-1705', room:'A房间', name:'杨志飞', phone:'', start:'2025-10-11', end:'2026-10-11', paytype:'押一付一', nextrent:'2026-01-11', deposit:580, rent:580, util:80, received:660 },
-      { house:'温泉城15-3105', room:'A房间', name:'陈宗春', phone:'', start:'2025-11-17', end:'2026-11-17', paytype:'押一付一', nextrent:'2026-01-17', deposit:560, rent:480, util:80, received:560 },
-      { house:'黄坡坎19-402', room:'D房间', name:'肖玉桃', phone:'', start:'2025-11-21', end:'2026-11-21', paytype:'押一付一', nextrent:'2026-02-21', deposit:500, rent:400, util:100, received:0 },
-      { house:'温泉城15-3105', room:'D房间', name:'潘虹燕', phone:'', start:'2025-11-29', end:'2026-11-29', paytype:'押一付一', nextrent:'2026-01-29', deposit:600, rent:600, util:100, received:700 },
-      { house:'邓家沟高铁还房14-2201', room:'C房间', name:'蒋佳林', phone:'', start:'2025-12-28', end:'2026-12-28', paytype:'押一付一', nextrent:'2026-01-28', deposit:470, rent:470, util:100, received:1040 },
-      { house:'邓家沟高铁还房14-2201', room:'D房间', name:'敬雷', phone:'', start:'2026-01-26', end:'2027-01-26', paytype:'押一付一', nextrent:'2026-01-14', deposit:620, rent:520, util:100, received:620 },
-      { house:'温泉城4-1406', room:'B房间', name:'曾朋', phone:'', start:'2026-01-01', end:'2027-01-30', paytype:'押一付一', nextrent:'2026-01-01', deposit:580, rent:580, util:100, received:1260 },
-      { house:'温泉城12-1403', room:'C房间', name:'秦有荣', phone:'', start:'2025-02-15', end:'2027-02-15', paytype:'押一付一', nextrent:'2026-02-15', deposit:550, rent:550, util:100, received:0 },
-      { house:'温泉城4栋2002', room:'B房间飘窗', name:'程佳', phone:'', start:'2026-02-23', end:'2027-02-23', paytype:'押一付一', nextrent:'', deposit:550, rent:550, util:65, received:0 },
-      { house:'温泉城4-1206', room:'D房间', name:'蔺钊', phone:'', start:'2026-02-27', end:'2027-02-27', paytype:'押一付一', nextrent:'2026-03-27', deposit:550, rent:450, util:100, received:550 },
-      { house:'时代广场7-1705', room:'D房间', name:'吴建栋', phone:'', start:'2026-03-01', end:'2027-03-01', paytype:'押一付三', nextrent:'2026-01-18', deposit:400, rent:400, util:100, received:0 },
-      { house:'温泉城4栋2002', room:'C房间独卫', name:'周瑞', phone:'', start:'2026-03-01', end:'2027-03-01', paytype:'押一付一', nextrent:'', deposit:680, rent:680, util:100, received:0 },
-      { house:'温泉城12-1403', room:'D房间', name:'钟毅', phone:'', start:'2026-03-03', end:'2027-03-03', paytype:'押一付一', nextrent:'2026-01-20', deposit:600, rent:600, util:100, received:700 },
-      { house:'温泉城4-1402', room:'A房间', name:'谢义', phone:'', start:'2025-06-09', end:'2027-03-09', paytype:'押一付一', nextrent:'2026-01-09', deposit:570, rent:570, util:100, received:670 },
-      { house:'蔷薇西岸12-803', room:'D房间', name:'葛晓红', phone:'', start:'2026-03-13', end:'2027-03-13', paytype:'押一付一', nextrent:'2026-03-25', deposit:550, rent:550, util:100, received:0 },
-      { house:'温泉城4-1406', room:'C房间', name:'白明辉', phone:'', start:'2026-03-15', end:'2027-03-15', paytype:'押一付一', nextrent:'2026-01-15', deposit:550, rent:550, util:100, received:650 },
-      { house:'蔷薇西岸12-803', room:'A房间', name:'何欣怡', phone:'', start:'2026-03-17', end:'2027-03-17', paytype:'押一付一', nextrent:'2026-01-19', deposit:580, rent:580, util:100, received:680 },
-      { house:'温泉城4栋1002', room:'C房间', name:'吴帆', phone:'', start:'2026-03-22', end:'2027-03-22', paytype:'押一付一', nextrent:'2026-01-22', deposit:700, rent:700, util:100, received:800 },
-      { house:'温泉城4-1402', room:'D房间', name:'谈永强', phone:'', start:'2025-04-22', end:'2027-12-22', paytype:'押一付一', nextrent:'2026-01-22', deposit:450, rent:450, util:100, received:550 },
-      { house:'温泉城12-203', room:'C房间', name:'李金隆', phone:'', start:'2025-12-22', end:'', paytype:'押一付一', nextrent:'2026-01-22', deposit:600, rent:500, util:100, received:1200 },
-      { house:'邓家沟高铁还房14-2201', room:'B房间', name:'白金民', phone:'', start:'2025-01-23', end:'', paytype:'押一付一', nextrent:'2026-01-28', deposit:450, rent:450, util:100, received:550 },
-      { house:'黄坡坎19-402', room:'C房间', name:'刘涛', phone:'', start:'2025-03-29', end:'', paytype:'押一付一', nextrent:'2026-01-29', deposit:450, rent:450, util:80, received:530 },
-      { house:'温泉城4-1402', room:'C房间', name:'冉广明', phone:'', start:'2025-07-29', end:'', paytype:'押一付一', nextrent:'2026-01-29', deposit:700, rent:700, util:100, received:800 }
-    ];
+  const defaultExpenses = {
+    '邓家沟高铁还房14-2201': { water: 0, repair: 18.7, forfeit: 0 },
+    '黄坡坎19-402': { water: 52.0, repair: 18.7, forfeit: 0 },
+    '蔷薇西岸12-803': { water: 92.2, repair: 18.7, forfeit: 0 },
+    '时代广场7-1705': { water: 92.0, repair: 18.7, forfeit: 0 },
+    '温泉城12-1403': { water: 48.0, repair: 18.7, forfeit: 0 },
+    '温泉城12-203': { water: 103.35, repair: 18.7, forfeit: 0 },
+    '温泉城15-3105': { water: 207.0, repair: 18.7, forfeit: 0 },
+    '温泉城16-1707': { water: 48.0, repair: 18.7, forfeit: 0 },
+    '温泉城17-1709': { water: 57.0, repair: 18.7, forfeit: 0 },
+    '温泉城4-1206': { water: 80.0, repair: 18.7, forfeit: 0 },
+    '温泉城4-1402': { water: 61.5, repair: 18.7, forfeit: 0 },
+    '温泉城4-1406': { water: 52.5, repair: 18.7, forfeit: 0 },
+    '温泉城4栋1002': { water: 173.0, repair: 18.7, forfeit: 0 },
+    '富力尚悦居': { water: 0, repair: 0, forfeit: 0 },
+    '温泉城4栋2002': { water: 153.0, repair: 18.7, forfeit: 0 },
+    '富力尚悦居6栋10-1': { water: 142.0, repair: 18.7, forfeit: 0 },
+    '温泉城14栋6-3': { water: 138.0, repair: 18.7, forfeit: 0 },
+    '温泉城16栋31-7': { water: 0, repair: 18.7, forfeit: 0 },
+    '温泉城7栋27-5': { water: 0, repair: 18.7, forfeit: 0 }
+  };
+  const defaultTenants = [
+      { house:'温泉城12-1403', room:'B房间', name:'龚红梅', phone:'', start:'2026-03-30', end:'2027-04-30', paytype:'押一付一', nextrent:'2026-11-07', deposit:680, rent:680, util:100, received:780 },
+      { house:'温泉城12-1403', room:'A房间', name:'黄琅', phone:'', start:'2026-04-06', end:'2027-04-06', paytype:'押一付三', nextrent:'2027-01-06', deposit:450, rent:450, util:100, received:1650 },
+      { house:'温泉城4-1206', room:'B房间', name:'郭战胜', phone:'', start:'2026-08-01', end:'2027-03-31', paytype:'押一付一', nextrent:'2026-11-01', deposit:600, rent:500, util:85, received:585 },
+      { house:'温泉城17-1709', room:'A房间', name:'李果', phone:'', start:'2026-04-22', end:'2027-02-22', paytype:'押一付一', nextrent:'2026-10-22', deposit:580, rent:580, util:100, received:680 },
+      { house:'温泉城4栋1002', room:'B房间', name:'余帮明', phone:'', start:'2026-07-03', end:'2027-08-03', paytype:'押一付一', nextrent:'2026-10-31', deposit:680, rent:580, util:100, received:680 },
+      { house:'温泉城16-1707', room:'D房间', name:'叶贞爱', phone:'', start:'2026-10-08', end:'2027-02-28', paytype:'押一付一', nextrent:'2026-11-08', deposit:500, rent:500, util:100, received:600 },
+      { house:'温泉城4-1206', room:'C房间', name:'游强', phone:'', start:'2026-03-31', end:'2027-03-31', paytype:'押一付一', nextrent:'2026-10-31', deposit:580, rent:580, util:100, received:680 },
+      { house:'温泉城4-1402', room:'B房间', name:'张利强', phone:'', start:'2025-04-30', end:'2027-04-30', paytype:'押一付一', nextrent:'2026-10-30', deposit:550, rent:550, util:100, received:650 },
+      { house:'温泉城4栋1002', room:'D房间', name:'陈灶', phone:'', start:'2025-10-30', end:'2027-04-30', paytype:'押一付一', nextrent:'2026-10-31', deposit:480, rent:480, util:100, received:580 },
+      { house:'温泉城16-1707', room:'B房间', name:'姚小杰', phone:'', start:'2026-07-26', end:'2027-03-26', paytype:'押一付一', nextrent:'2026-10-26', deposit:680, rent:680, util:100, received:780 },
+      { house:'富力尚悦居6栋10-1', room:'A房间', name:'江凌智', phone:'', start:'2026-04-30', end:'2027-04-30', paytype:'押一付一', nextrent:'2026-10-30', deposit:480, rent:480, util:100, received:580 },
+      { house:'温泉城4-1206', room:'A房间', name:'唐锐', phone:'', start:'2026-07-26', end:'2027-07-26', paytype:'押一付一', nextrent:'2026-10-26', deposit:700, rent:600, util:100, received:700 },
+      { house:'温泉城15-3105', room:'B房间', name:'马吉', phone:'', start:'2025-11-15', end:'2026-11-15', paytype:'押一付三', nextrent:'2026-11-15', deposit:700, rent:700, util:100, received:0 },
+      { house:'温泉城12-203', room:'B房间', name:'张雪', phone:'', start:'2026-09-10', end:'2027-09-10', paytype:'押一付一', nextrent:'2026-11-10', deposit:400, rent:400, util:100, received:500 },
+      { house:'温泉城4栋1002', room:'A房间', name:'曾路', phone:'', start:'2026-04-28', end:'2027-04-26', paytype:'押一付一', nextrent:'2026-10-31', deposit:680, rent:580, util:100, received:680 },
+      { house:'邓家沟高铁还房14-2201', room:'A房间', name:'秦正伦', phone:'', start:'2026-07-01', end:'2027-07-01', paytype:'押一付一', nextrent:'2026-10-31', deposit:530, rent:400, util:100, received:500 },
+      { house:'蔷薇西岸12-803', room:'C房间', name:'张践', phone:'', start:'2026-07-30', end:'2027-03-30', paytype:'押一付一', nextrent:'2026-10-30', deposit:530, rent:430, util:100, received:530 },
+      { house:'时代广场7-1705', room:'B房间', name:'饶欢欢', phone:'', start:'2026-06-14', end:'2027-06-14', paytype:'押一付一', nextrent:'2026-11-14', deposit:700, rent:600, util:100, received:700 },
+      { house:'温泉城4-1406', room:'A房间', name:'杨方程', phone:'', start:'2026-09-17', end:'2027-02-17', paytype:'押一付一', nextrent:'2026-11-17', deposit:550, rent:550, util:100, received:650 },
+      { house:'温泉城4栋2002', room:'A房间阳台', name:'胡军', phone:'', start:'2026-05-28', end:'2027-05-28', paytype:'押一付一', nextrent:'2026-11-28', deposit:580, rent:580, util:100, received:680 },
+      { house:'温泉城12-203', room:'A房间', name:'况静林', phone:'', start:'2026-08-19', end:'2027-03-19', paytype:'押一付一', nextrent:'2026-11-19', deposit:500, rent:500, util:100, received:600 },
+      { house:'黄坡坎19-402', room:'B房间', name:'彭咪麟', phone:'', start:'2025-08-31', end:'2027-03-31', paytype:'押一付一', nextrent:'2026-10-30', deposit:480, rent:480, util:100, received:580 },
+      { house:'温泉城16-1707', room:'A房间', name:'马思涵', phone:'', start:'2026-08-27', end:'2027-03-27', paytype:'押一付一', nextrent:'2026-10-27', deposit:470, rent:460, util:100, received:560 },
+      { house:'蔷薇西岸12-803', room:'B房间', name:'梁萧', phone:'', start:'2025-07-21', end:'2027-09-30', paytype:'押一付一', nextrent:'2026-10-30', deposit:600, rent:600, util:100, received:700 },
+      { house:'温泉城4-1406', room:'D房间', name:'邓廷亿', phone:'', start:'2026-10-06', end:'2027-10-06', paytype:'押一付一', nextrent:'2026-11-06', deposit:580, rent:480, util:100, received:1030 },
+      { house:'温泉城4栋2002', room:'D房间次卧', name:'黎原龙', phone:'', start:'2026-03-15', end:'2027-03-15', paytype:'押一付一', nextrent:'2026-11-15', deposit:450, rent:450, util:100, received:550 },
+      { house:'温泉城16-1707', room:'C房间', name:'谢聪', phone:'', start:'2026-03-16', end:'2026-12-15', paytype:'押一付三', nextrent:'', deposit:650, rent:550, util:100, received:1950 },
+      { house:'黄坡坎19-402', room:'A房间', name:'汤宏林', phone:'', start:'2025-12-10', end:'2027-10-11', paytype:'押一付一', nextrent:'2026-11-10', deposit:630, rent:530, util:100, received:1260 },
+      { house:'时代广场7-1705', room:'A房间', name:'马思涵', phone:'', start:'2026-08-27', end:'2027-03-27', paytype:'押一付一', nextrent:'2026-10-27', deposit:460, rent:460, util:100, received:560 },
+      { house:'温泉城15-3105', room:'A房间', name:'陈宗春', phone:'', start:'2025-11-17', end:'2026-11-17', paytype:'押一付一', nextrent:'2026-11-17', deposit:560, rent:480, util:80, received:560 },
+      { house:'黄坡坎19-402', room:'D房间', name:'肖玉桃', phone:'', start:'2026-03-23', end:'2027-03-23', paytype:'押一付三', nextrent:'2026-12-23', deposit:400, rent:400, util:60, received:1380 },
+      { house:'温泉城15-3105', room:'D房间', name:'刘夏利', phone:'', start:'2025-11-29', end:'2027-12-29', paytype:'押一付一', nextrent:'2026-11-06', deposit:600, rent:600, util:100, received:700 },
+      { house:'邓家沟高铁还房14-2201', room:'C房间', name:'张尚书', phone:'', start:'2026-07-10', end:'2027-02-10', paytype:'押一付一', nextrent:'2026-11-10', deposit:470, rent:455, util:100, received:555 },
+      { house:'邓家沟高铁还房14-2201', room:'D房间', name:'敬雷', phone:'', start:'2026-01-26', end:'2027-01-26', paytype:'押一付三', nextrent:'2026-10-26', deposit:620, rent:550, util:100, received:1950 },
+      { house:'温泉城4-1406', room:'B房间', name:'谢安', phone:'', start:'2026-06-02', end:'2027-03-02', paytype:'押一付一', nextrent:'2026-11-02', deposit:550, rent:550, util:100, received:650 },
+      { house:'温泉城12-1403', room:'C房间', name:'秦有荣', phone:'', start:'2025-02-15', end:'2027-02-15', paytype:'押一付三', nextrent:'2026-12-15', deposit:550, rent:550, util:68, received:1854 },
+      { house:'温泉城4栋2002', room:'B房间飘窗', name:'程佳', phone:'', start:'2026-02-23', end:'2027-02-23', paytype:'押一付一', nextrent:'2026-11-23', deposit:550, rent:550, util:65, received:0 },
+      { house:'温泉城4-1206', room:'D房间', name:'宗小平', phone:'', start:'2026-03-01', end:'2027-04-01', paytype:'押一付一', nextrent:'2026-11-01', deposit:450, rent:450, util:100, received:550 },
+      { house:'时代广场7-1705', room:'D房间', name:'谢万科', phone:'', start:'2026-07-22', end:'2027-02-22', paytype:'押一付一', nextrent:'2026-11-22', deposit:550, rent:450, util:100, received:550 },
+      { house:'温泉城4栋2002', room:'C房间独卫', name:'张婷婷', phone:'', start:'2026-10-08', end:'2027-10-11', paytype:'押一付一', nextrent:'2026-11-08', deposit:650, rent:650, util:100, received:750 },
+      { house:'温泉城12-1403', room:'D房间', name:'钟毅', phone:'', start:'2026-03-03', end:'2027-03-03', paytype:'押一付一', nextrent:'2026-11-03', deposit:700, rent:600, util:100, received:700 },
+      { house:'温泉城4-1402', room:'A房间', name:'谢义', phone:'', start:'2025-06-09', end:'2027-03-09', paytype:'押一付一', nextrent:'2026-11-09', deposit:570, rent:570, util:100, received:670 },
+      { house:'蔷薇西岸12-803', room:'D房间', name:'葛晓红', phone:'', start:'2026-03-13', end:'2027-03-13', paytype:'押一付一', nextrent:'2026-11-13', deposit:550, rent:550, util:70, received:620 },
+      { house:'温泉城4-1406', room:'C房间', name:'白明辉', phone:'', start:'2026-03-15', end:'2027-03-15', paytype:'押一付一', nextrent:'2026-11-15', deposit:550, rent:550, util:100, received:650 },
+      { house:'蔷薇西岸12-803', room:'A房间', name:'冉鹏飞', phone:'', start:'2026-06-08', end:'2027-06-08', paytype:'押一付一', nextrent:'2026-11-08', deposit:680, rent:580, util:100, received:680 },
+      { house:'温泉城4栋1002', room:'C房间', name:'吴帆', phone:'', start:'2026-03-22', end:'2027-03-22', paytype:'押一付一', nextrent:'2026-11-22', deposit:700, rent:700, util:100, received:800 },
+      { house:'温泉城4-1402', room:'D房间', name:'谈永强', phone:'', start:'2025-04-22', end:'2026-12-23', paytype:'押一付一', nextrent:'2026-11-22', deposit:450, rent:450, util:100, received:550 },
+      { house:'温泉城12-203', room:'C房间', name:'李金隆', phone:'', start:'2025-12-22', end:'2027-02-22', paytype:'押一付一', nextrent:'2026-11-22', deposit:600, rent:500, util:100, received:1200 },
+      { house:'邓家沟高铁还房14-2201', room:'B房间', name:'伍玉苹', phone:'', start:'2026-09-12', end:'2027-09-12', paytype:'押一付一', nextrent:'2026-10-31', deposit:500, rent:500, util:80, received:580 },
+      { house:'黄坡坎19-402', room:'C房间', name:'杨君艳', phone:'', start:'2026-09-09', end:'2027-09-09', paytype:'押一付一', nextrent:'2026-11-09', deposit:580, rent:480, util:100, received:580 },
+      { house:'温泉城4-1402', room:'C房间', name:'谭林生', phone:'', start:'2026-09-06', end:'2027-09-06', paytype:'押一付一', nextrent:'2026-11-06', deposit:700, rent:700, util:100, received:800 },
+      { house:'温泉城17-1709', room:'B房间', name:'黄佳鑫', phone:'', start:'2026-05-23', end:'2027-02-23', paytype:'押一付一', nextrent:'2026-11-22', deposit:650, rent:580, util:70, received:650 },
+      { house:'温泉城17-1709', room:'C房间', name:'邓渝', phone:'', start:'2027-04-15', end:'2027-03-01', paytype:'押一付一', nextrent:'2026-11-15', deposit:0, rent:0, util:0, received:0 },
+      { house:'富力尚悦居6栋10-1', room:'B房间', name:'陈海俊', phone:'', start:'2026-05-05', end:'2026-11-05', paytype:'押一付一', nextrent:'', deposit:680, rent:680, util:100, received:780 },
+      { house:'富力尚悦居6栋10-1', room:'C房间阳台', name:'黎均', phone:'', start:'2026-05-04', end:'2027-05-04', paytype:'押一付一', nextrent:'2026-11-04', deposit:600, rent:600, util:100, received:700 },
+      { house:'富力尚悦居6栋10-1', room:'D房间', name:'廖国锦', phone:'', start:'2026-05-13', end:'2027-05-13', paytype:'押一付一', nextrent:'2026-11-13', deposit:500, rent:500, util:100, received:600 },
+      { house:'温泉城7栋27-5', room:'整租2房', name:'胥云川/王宗进', phone:'', start:'2026-07-05', end:'2027-07-05', paytype:'押一付三', nextrent:'2027-01-05', deposit:1500, rent:1100, util:0, received:3300 },
+      { house:'温泉城14栋6-3', room:'A房间', name:'李杰', phone:'', start:'2026-09-09', end:'2027-09-09', paytype:'押一付一', nextrent:'2026-11-09', deposit:570, rent:470, util:100, received:570 },
+      { house:'温泉城14栋6-3', room:'B房间', name:'任春盈', phone:'', start:'2026-09-01', end:'2027-08-31', paytype:'押一付一', nextrent:'2026-10-31', deposit:680, rent:680, util:70, received:750 },
+      { house:'温泉城14栋6-3', room:'C房间', name:'任勇', phone:'', start:'2026-09-07', end:'2027-03-07', paytype:'押一付一', nextrent:'2026-11-07', deposit:550, rent:550, util:100, received:650 },
+      { house:'温泉城14栋6-3', room:'C房间', name:'周荣琨', phone:'', start:'2026-09-01', end:'2027-04-30', paytype:'押一付一', nextrent:'2026-11-01', deposit:660, rent:580, util:80, received:660 },
+      { house:'温泉城16栋31-7', room:'A房间次卧', name:'蒲祥', phone:'', start:'2026-10-09', end:'2027-10-09', paytype:'押一付一', nextrent:'2026-11-09', deposit:400, rent:400, util:100, received:500 },
+      { house:'温泉城16栋31-7', room:'B房间主卧飘窗', name:'马大发', phone:'', start:'2026-10-08', end:'2027-04-08', paytype:'押一付一', nextrent:'2026-11-08', deposit:650, rent:550, util:100, received:650 },
+      { house:'温泉城16栋31-7', room:'D房间阳台', name:'张毅', phone:'', start:'2026-10-15', end:'2027-04-15', paytype:'押一付一', nextrent:'2026-11-15', deposit:600, rent:600, util:100, received:700 }
+  ];
+  const defaultVacant = [
+    { house: '温泉城15-3105', room: 'C房间', rent: 550, vacantSince: '2026-10-22' },
+    { house: '时代广场7-1705', room: 'C房间', rent: 550, vacantSince: '2026-10-22' },
+    { house: '温泉城12-203', room: 'D房间', rent: 450, vacantSince: '2026-10-22' }
+  ];
+  const storedVer = localStorage.getItem('rental_dataver');
+  if (storedVer !== DATA_VER) {
+    // 数据源版本变更 → 以最新租客数据为唯一数据源，强制同步
+    costs = defaultCosts; expenses = defaultExpenses;
+    tenants = defaultTenants; vacantRooms = defaultVacant;
+    paymentRecords = {};
+    localStorage.setItem('rental_dataver', DATA_VER);
+    saveData();
+    window.__dataRefreshed = true;
+  } else {
+    if (!localStorage.getItem('rental_costs')) costs = defaultCosts;
+    if (!localStorage.getItem('rental_expenses')) expenses = defaultExpenses;
+    if (!localStorage.getItem('rental_tenants')) tenants = defaultTenants;
+    if (!localStorage.getItem('rental_vacant')) vacantRooms = defaultVacant;
     saveData();
   }
 }
@@ -981,6 +1146,48 @@ function daysFromNow(d) { if (!d) return Infinity; return daysBetween(new Date()
 function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 9); }
 
 // ============================================================
+// 统一利润计算（整站汇总 / 单套房源 严格共用同一公式）
+// 月净利 = 当月收入 + 水燃气网络收入 − 成本租金 − 支出水燃费 − 维修费用 + 押金违约所得
+// ============================================================
+function calcProfit(rent, util, cost, water, repair, forfeit) {
+  return (Number(rent)||0) + (Number(util)||0) - (Number(cost)||0)
+       - (Number(water)||0) - (Number(repair)||0) + (Number(forfeit)||0);
+}
+function allHouses() {
+  return [...new Set([...Object.keys(costs), ...tenants.map(t=>t.house)])].sort();
+}
+function houseIncome(h) {
+  const group = tenants.filter(t => t.house === h);
+  return {
+    cnt: group.length,
+    rent: group.reduce((s,t)=>s+(Number(t.rent)||0),0),
+    util: group.reduce((s,t)=>s+(Number(t.util)||0),0)
+  };
+}
+function calcHouseProfit(h) {
+  const inc = houseIncome(h);
+  const exp = expenses[h] || {};
+  return calcProfit(inc.rent, inc.util, costs[h], exp.water, exp.repair, exp.forfeit);
+}
+function calcTotalProfit() {
+  return allHouses().reduce((s,h) => s + calcHouseProfit(h), 0);
+}
+function totalProfitParts() {
+  const parts = { rent:0, util:0, cost:0, water:0, repair:0, forfeit:0, profit:0 };
+  allHouses().forEach(h => {
+    const inc = houseIncome(h);
+    const exp = expenses[h] || {};
+    parts.rent += inc.rent; parts.util += inc.util;
+    parts.cost += Number(costs[h])||0;
+    parts.water += Number(exp.water)||0;
+    parts.repair += Number(exp.repair)||0;
+    parts.forfeit += Number(exp.forfeit)||0;
+    parts.profit += calcHouseProfit(h);
+  });
+  return parts;
+}
+
+// ============================================================
 // 统计更新
 // ============================================================
 function updateStats() {
@@ -989,25 +1196,14 @@ function updateStats() {
   const rent = tenants.reduce((s,t) => s + (Number(t.rent)||0), 0);
   const util = tenants.reduce((s,t) => s + (Number(t.util)||0), 0);
   const income = rent + util;
-  const houses = [...new Set(tenants.map(t=>t.house))];
-  let totalBaseCost = 0, totalWater = 0, totalRepair = 0, totalForfeit = 0;
-  houses.forEach(h => {
-    const exp = expenses[h] || {};
-    totalBaseCost += Number(costs[h])||0;
-    totalWater += Number(exp.water)||0;
-    totalRepair += Number(exp.repair)||0;
-    totalForfeit += Number(exp.forfeit)||0;
-  });
-  const today = new Date().toISOString().slice(0,10);
-  const totalVacantFee = vacantRooms.reduce((s,v) => {
-    const days = daysBetween(v.vacantSince, today);
-    return s + (v.rent / 30 * days);
-  }, 0);
-  const profit = income - totalBaseCost - totalWater - totalRepair + totalForfeit - totalVacantFee;
+  // 统一公式：与单套房源共用 totalProfitParts / calcHouseProfit
+  const P = totalProfitParts();
+  const totalBaseCost = P.cost, totalWater = P.water, totalRepair = P.repair, totalForfeit = P.forfeit;
+  const profit = P.profit;
   document.getElementById('stat-count').textContent = total + ' 人';
   document.getElementById('stat-deposit').textContent = fmt(deposit);
   document.getElementById('stat-rent').textContent = fmt(income);
-  document.getElementById('stat-cost').textContent = fmt(totalBaseCost + totalWater + totalRepair + totalVacantFee);
+  document.getElementById('stat-cost').textContent = fmt(totalBaseCost + totalWater + totalRepair);
   document.getElementById('stat-exp').textContent = fmt(totalWater + totalRepair);
   const profitEl = document.getElementById('stat-profit');
   profitEl.textContent = (profit >= 0 ? '+' : '') + fmt(profit);
@@ -1033,23 +1229,146 @@ function isTenantPaidThisMonth(t) {
 // ============================================================
 // 渲染在租列表
 // ============================================================
-function renderTable() {
+// ============================================================
+// 列表筛选 + 排序（9 字段独立筛选，多条件 AND；表头点击升降序）
+// ============================================================
+let hdrSort = { key: '', dir: 'asc' };
+const SORT_NUM_KEYS = ['deposit','rent','util','received'];
+const ADV_TEXT_IDS = ['flt-house','flt-phone','flt-start1','flt-start2','flt-end1','flt-end2','flt-next1','flt-next2','flt-dep1','flt-dep2','flt-rent1','flt-rent2'];
+const ADV_SEL_IDS = ['flt-room','flt-paytype'];
+
+function av(id) { const el = document.getElementById(id); return el ? (el.value || '').trim() : ''; }
+function inDateRange(d, a, b) {
+  if (!d) return false;
+  if (a && d < a) return false;
+  if (b && d > b) return false;
+  return true;
+}
+function inNumRange(n, a, b) {
+  const x = Number(n) || 0;
+  if (a !== '' && x < Number(a)) return false;
+  if (b !== '' && x > Number(b)) return false;
+  return true;
+}
+function cmpVal(a, b, k) {
+  if (SORT_NUM_KEYS.indexOf(k) >= 0) return (Number(a)||0) - (Number(b)||0);
+  const x = (a === undefined || a === null) ? '' : String(a);
+  const y = (b === undefined || b === null) ? '' : String(b);
+  if (x === '' && y !== '') return 1;
+  if (y === '' && x !== '') return -1;
+  return x.localeCompare(y, 'zh-Hans-CN');
+}
+function getFilteredTenants() {
   const search = (document.getElementById('searchBox')?.value || '').toLowerCase();
   const filterHouse = document.getElementById('filterHouse')?.value || '';
   const sortKey = document.getElementById('filterSort')?.value || 'house';
-
   let data = tenants.map((t,i) => ({...t, _idx: i}));
+
+  // —— 原有能力（保持不冲突、不覆盖）——
   if (search) data = data.filter(t => t.name.toLowerCase().includes(search) || t.house.toLowerCase().includes(search) || (t.phone && t.phone.includes(search)));
   if (filterHouse) data = data.filter(t => t.house === filterHouse);
-
   if (activeFilters.overdue) data = data.filter(t => isTenantOverdue(t) && !isTenantPaidThisMonth(t));
   if (activeFilters.paid) data = data.filter(t => isTenantPaidThisMonth(t));
   if (activeFilters.expiring) data = data.filter(t => t.end && daysFromNow(t.end) <= 30 && daysFromNow(t.end) >= 0);
 
-  if (sortKey === 'expire') data.sort((a,b) => (a.end||'9999') < (b.end||'9999') ? -1 : 1);
-  else if (sortKey === 'rent') data.sort((a,b) => (Number(b.rent)||0) - (Number(a.rent)||0));
-  else data.sort((a,b) => a.house < b.house ? -1 : a.house > b.house ? 1 : 0);
+  // —— 9 项独立筛选（多条件同时生效，AND 逻辑）——
+  const fHouse = av('flt-house'), fRoom = av('flt-room'), fPhone = av('flt-phone');
+  const fPay = av('flt-paytype');
+  const s1 = av('flt-start1'), s2 = av('flt-start2');
+  const e1 = av('flt-end1'), e2 = av('flt-end2');
+  const n1 = av('flt-next1'), n2 = av('flt-next2');
+  const d1 = av('flt-dep1'), d2 = av('flt-dep2');
+  const r1 = av('flt-rent1'), r2 = av('flt-rent2');
 
+  if (fHouse) data = data.filter(t => (t.house||'').toLowerCase().indexOf(fHouse.toLowerCase()) >= 0);
+  if (fRoom) data = data.filter(t => t.room === fRoom);
+  if (fPhone) data = data.filter(t => (t.phone||'').indexOf(fPhone) >= 0);
+  if (s1 || s2) data = data.filter(t => inDateRange(t.start, s1, s2));
+  if (e1 || e2) data = data.filter(t => inDateRange(t.end, e1, e2));
+  if (fPay) data = data.filter(t => t.paytype === fPay);
+  if (n1 || n2) data = data.filter(t => inDateRange(t.nextrent, n1, n2));
+  if (d1 || d2) data = data.filter(t => inNumRange(t.deposit, d1, d2));
+  if (r1 || r2) data = data.filter(t => inNumRange(t.rent, r1, r2));
+
+  // —— 排序：表头排序优先，否则沿用原有下拉排序 ——
+  if (hdrSort.key) {
+    const k = hdrSort.key, dir = hdrSort.dir === 'asc' ? 1 : -1;
+    data.sort((a,b) => cmpVal(a[k], b[k], k) * dir);
+  } else if (sortKey === 'expire') {
+    data.sort((a,b) => (a.end||'9999') < (b.end||'9999') ? -1 : 1);
+  } else if (sortKey === 'rent') {
+    data.sort((a,b) => (Number(b.rent)||0) - (Number(a.rent)||0));
+  } else if (sortKey === 'header') {
+    // 表头排序项被清除时保持原序
+  } else {
+    data.sort((a,b) => a.house < b.house ? -1 : a.house > b.house ? 1 : 0);
+  }
+  return data;
+}
+
+function sortBy(key) {
+  if (hdrSort.key === key) hdrSort.dir = (hdrSort.dir === 'asc' ? 'desc' : 'asc');
+  else { hdrSort.key = key; hdrSort.dir = 'asc'; }
+  const sel = document.getElementById('filterSort');
+  if (sel) sel.value = 'header';
+  updateSortIndicators();
+  renderTable();
+}
+function updateSortIndicators() {
+  ['house','room','name','phone','start','end','paytype','nextrent','deposit','rent','util','received'].forEach(k => {
+    const el = document.getElementById('si-' + k);
+    if (el) el.textContent = (hdrSort.key === k) ? (hdrSort.dir === 'asc' ? '▲' : '▼') : '';
+  });
+}
+function onSortSelectChange() {
+  const v = document.getElementById('filterSort')?.value;
+  if (v !== 'header') { hdrSort.key = ''; hdrSort.dir = 'asc'; }
+  updateSortIndicators();
+  renderTable();
+}
+function toggleAdvPanel() {
+  const p = document.getElementById('advFilterPanel');
+  const btn = document.getElementById('advToggleBtn');
+  if (!p) return;
+  if (p.style.display === 'none') { p.style.display = ''; if (btn) btn.textContent = '🔼 收起筛选'; }
+  else { p.style.display = 'none'; if (btn) btn.textContent = '🔽 高级筛选'; }
+}
+function updateAdvOptions() {
+  const sel = document.getElementById('flt-room');
+  if (!sel) return;
+  const cur = sel.value;
+  const rooms = [...new Set(tenants.map(t => t.room).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-Hans-CN'));
+  sel.innerHTML = '<option value="">全部户型</option>' + rooms.map(r => '<option value="' + r + '">' + r + '</option>').join('');
+  if (rooms.indexOf(cur) >= 0) sel.value = cur;
+}
+function resetAdvFilters() {
+  ADV_TEXT_IDS.concat(ADV_SEL_IDS).forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  hdrSort = { key: '', dir: 'asc' };
+  const sel = document.getElementById('filterSort'); if (sel) sel.value = 'house';
+  updateSortIndicators();
+  renderTable();
+  notify('筛选与排序已重置');
+}
+function activeAdvCount() {
+  let n = 0;
+  ADV_TEXT_IDS.concat(ADV_SEL_IDS).forEach(id => { if (av(id) !== '') n++; });
+  return n;
+}
+function exportCurrentExcel() {
+  const data = getFilteredTenants();
+  if (data.length === 0) { notify('当前筛选条件下没有数据', true); return; }
+  const wb = XLSX.utils.book_new();
+  const rows = data.map(t => ({'房号':t.house,'户型':t.room,'租客姓名':t.name,'手机号':t.phone||'','起租日期':t.start,'到期日期':t.end||'——','租房方式':t.paytype,'下月收租日期':t.nextrent||'','押金(已给）':Number(t.deposit)||0,'房租/月':Number(t.rent)||0,'水燃网络/月':Number(t.util)||0,'当月收款':Number(t.received)||0}));
+  rows.push({'房号':'合计','户型':'','租客姓名':'共' + data.length + '位租客','押金(已给）':data.reduce((s,t)=>s+(Number(t.deposit)||0),0),'房租/月':data.reduce((s,t)=>s+(Number(t.rent)||0),0),'水燃网络/月':data.reduce((s,t)=>s+(Number(t.util)||0),0),'当月收款':data.reduce((s,t)=>s+(Number(t.received)||0),0)});
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), '租客列表');
+  const now = new Date();
+  const stamp = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  XLSX.writeFile(wb, '租客列表_筛选后_' + stamp + '.xlsx');
+  notify('已按当前条件导出 ' + data.length + ' 条');
+}
+
+function renderTable() {
+  const data = getFilteredTenants();
   const tbody = document.getElementById('mainTbody');
   tbody.innerHTML = '';
   data.forEach((t, i) => {
@@ -1099,6 +1418,8 @@ function renderTable() {
     tbody.appendChild(tsum);
   }
   if (document.getElementById('rowCount')) document.getElementById('rowCount').textContent = '显示 ' + data.length + ' / ' + tenants.length + ' 条';
+  const ac = document.getElementById('advCount');
+  if (ac) { const n = activeAdvCount(); ac.textContent = n > 0 ? '已启用 ' + n + ' 个筛选条件（AND）' : '未启用筛选条件'; }
 }
 
 function toggleFilter(filter, el) {
@@ -1261,47 +1582,42 @@ function deleteRepair(idx) { if (!confirm('确认删除？')) return; repairReco
 // 租金差分析 (Cost) - 保留原有功能
 // ============================================================
 function renderCostTable() {
-  const houses = [...new Set(tenants.map(t=>t.house))].sort();
+  const houses = allHouses();
   const tbody = document.getElementById('costTbody');
   if (!tbody) return;
   tbody.innerHTML = '';
-  let totalRent=0, totalUtil=0, totalCost=0, totalWater=0, totalRepair=0, totalForfeit=0, totalVacant=0, totalProfit=0;
-  const today = new Date().toISOString().slice(0,10);
+  let totalRent=0, totalUtil=0, totalCost=0, totalWater=0, totalRepair=0, totalForfeit=0, totalProfit=0;
   houses.forEach((h, i) => {
-    const group = tenants.filter(t => t.house === h);
-    const rent = group.reduce((s,t) => s+(Number(t.rent)||0), 0);
-    const util = group.reduce((s,t) => s+(Number(t.util)||0), 0);
-    const income = rent + util;
+    const inc = houseIncome(h);
+    const rent = inc.rent, util = inc.util;
     const costBase = Number(costs[h]) || 0;
     const exp = expenses[h] || {};
     const water = Number(exp.water)||0, repair = Number(exp.repair)||0, forfeit = Number(exp.forfeit)||0;
-    const houseVacant = vacantRooms.filter(v => v.house === h);
-    const vacantFee = houseVacant.reduce((s,v) => { const days = daysBetween(v.vacantSince,today); return s+(v.rent/30*days); }, 0);
-    const profit = income - costBase - water - repair + forfeit - vacantFee;
-    const totalExpense = costBase + water + repair + vacantFee;
+    const profit = calcProfit(rent, util, costBase, water, repair, forfeit);
+    const totalExpense = costBase + water + repair;
     const rate = totalExpense > 0 ? ((profit/totalExpense)*100).toFixed(1) : (profit > 0 ? '∞' : '—');
-    totalRent += rent; totalUtil += util; totalCost += costBase; totalWater += water; totalRepair += repair; totalForfeit += forfeit; totalVacant += vacantFee; totalProfit += profit;
+    totalRent += rent; totalUtil += util; totalCost += costBase; totalWater += water; totalRepair += repair; totalForfeit += forfeit; totalProfit += profit;
     const tr = document.createElement('tr');
     tr.style.background = i%2===0 ? '#DCE6F1' : '#fff';
-    tr.innerHTML = '<td class="left" style="font-weight:500;">'+h+'</td><td>'+group.length+'</td><td style="color:#1a7a4e;font-weight:500;">¥'+rent.toLocaleString()+'</td><td>¥'+util.toLocaleString()+'</td><td style="color:#c0392b;">¥'+costBase.toLocaleString()+'</td><td style="color:#bf7a00;">¥'+water.toLocaleString()+'</td><td style="color:#8b5cf6;">¥'+repair.toLocaleString()+'</td><td style="color:'+(forfeit>0?'#1a7a4e':'#aaa')+';font-weight:500;">'+ (forfeit>0?'+':'')+'¥'+forfeit.toLocaleString()+'</td><td style="color:'+(vacantFee>0?'#e05a00':'#aaa')+';">¥'+vacantFee.toLocaleString()+'</td><td class="'+(profit>=0?'profit-pos':'profit-neg')+'">'+(profit>=0?'+':'')+'¥'+profit.toLocaleString()+'</td><td class="'+(profit>=0?'profit-pos':'profit-neg')+'">'+rate+(rate==='∞'?'':rate==='—'?'':'%')+'</td>';
+    tr.innerHTML = '<td class="left" style="font-weight:500;">'+h+'</td><td>'+inc.cnt+'</td><td style="color:#1a7a4e;font-weight:500;">¥'+rent.toLocaleString()+'</td><td>¥'+util.toLocaleString()+'</td><td style="color:#c0392b;">¥'+costBase.toLocaleString()+'</td><td style="color:#bf7a00;">¥'+water.toLocaleString()+'</td><td style="color:#8b5cf6;">¥'+repair.toLocaleString()+'</td><td style="color:'+(forfeit>0?'#1a7a4e':'#aaa')+';font-weight:500;">'+ (forfeit>0?'+':'')+'¥'+forfeit.toLocaleString()+'</td><td class="'+(profit>=0?'profit-pos':'profit-neg')+'">'+(profit>=0?'+':'')+'¥'+profit.toLocaleString()+'</td><td class="'+(profit>=0?'profit-pos':'profit-neg')+'">'+rate+(rate==='∞'?'':rate==='—'?'':'%')+'</td>';
     tbody.appendChild(tr);
   });
   // Summary
   const tsum = document.createElement('tr');
   tsum.style.background = '#FFF2CC'; tsum.style.fontWeight = '500';
-  const totalExp = totalCost + totalWater + totalRepair + totalVacant;
-  tsum.innerHTML = '<td class="left">合计（'+houses.length+'套）</td><td>'+tenants.length+'</td><td style="color:#1a7a4e;">¥'+totalRent.toLocaleString()+'</td><td>¥'+totalUtil.toLocaleString()+'</td><td style="color:#c0392b;">¥'+totalCost.toLocaleString()+'</td><td style="color:#bf7a00;">¥'+totalWater.toLocaleString()+'</td><td style="color:#8b5cf6;">¥'+totalRepair.toLocaleString()+'</td><td style="color:#1a7a4e;">+¥'+totalForfeit.toLocaleString()+'</td><td style="color:#e05a00;">¥'+totalVacant.toLocaleString()+'</td><td class="'+(totalProfit>=0?'profit-pos':'profit-neg')+'">'+(totalProfit>=0?'+':'')+'¥'+totalProfit.toLocaleString()+'</td><td class="'+(totalProfit>=0?'profit-pos':'profit-neg')+'">'+(totalExp>0?((totalProfit/totalExp)*100).toFixed(1):0)+'%</td>';
+  const totalExp = totalCost + totalWater + totalRepair;
+  tsum.innerHTML = '<td class="left">合计（'+houses.length+'套）</td><td>'+tenants.length+'</td><td style="color:#1a7a4e;">¥'+totalRent.toLocaleString()+'</td><td>¥'+totalUtil.toLocaleString()+'</td><td style="color:#c0392b;">¥'+totalCost.toLocaleString()+'</td><td style="color:#bf7a00;">¥'+totalWater.toLocaleString()+'</td><td style="color:#8b5cf6;">¥'+totalRepair.toLocaleString()+'</td><td style="color:#1a7a4e;">+¥'+totalForfeit.toLocaleString()+'</td><td class="'+(totalProfit>=0?'profit-pos':'profit-neg')+'">'+(totalProfit>=0?'+':'')+'¥'+totalProfit.toLocaleString()+'</td><td class="'+(totalProfit>=0?'profit-pos':'profit-neg')+'">'+(totalExp>0?((totalProfit/totalExp)*100).toFixed(1):0)+'%</td>';
   tbody.appendChild(tsum);
   // Summary cards
   const income = totalRent + totalUtil + totalForfeit;
   const bar = document.getElementById('costSummaryBar');
-  bar.innerHTML = '<div class="cost-stat"><div class="cost-stat-label">月收入（含违约所得）</div><div class="cost-stat-value" style="color:#1a7a4e;">¥'+income.toLocaleString()+'</div></div><div class="cost-stat"><div class="cost-stat-label">成本租金+水电维修</div><div class="cost-stat-value" style="color:#c0392b;">¥'+(totalCost+totalWater+totalRepair).toLocaleString()+'</div></div><div class="cost-stat"><div class="cost-stat-label">押金违约+待租损失</div><div class="cost-stat-value" style="color:'+(totalForfeit-totalVacant>=0?'#1a7a4e':'#e05a00')+';">'+(totalForfeit>0?'+':'')+'¥'+(totalForfeit-totalVacant).toLocaleString()+'</div></div><div class="cost-stat"><div class="cost-stat-label">月净利润</div><div class="cost-stat-value" style="color:'+(totalProfit>=0?'#1a7a4e':'#c0392b')+';">'+(totalProfit>=0?'+':'')+'¥'+totalProfit.toLocaleString()+'</div></div>';
+  bar.innerHTML = '<div class="cost-stat"><div class="cost-stat-label">月收入（含违约所得）</div><div class="cost-stat-value" style="color:#1a7a4e;">¥'+income.toLocaleString()+'</div></div><div class="cost-stat"><div class="cost-stat-label">成本租金+水电维修</div><div class="cost-stat-value" style="color:#c0392b;">¥'+(totalCost+totalWater+totalRepair).toLocaleString()+'</div></div><div class="cost-stat"><div class="cost-stat-label">押金违约所得</div><div class="cost-stat-value" style="color:'+(totalForfeit>0?'#1a7a4e':'#aaa')+';">'+(totalForfeit>0?'+':'')+'¥'+totalForfeit.toLocaleString()+'</div></div><div class="cost-stat"><div class="cost-stat-label">月净利润</div><div class="cost-stat-value" style="color:'+(totalProfit>=0?'#1a7a4e':'#c0392b')+';">'+(totalProfit>=0?'+':'')+'¥'+totalProfit.toLocaleString()+'</div></div>';
   // Expense editor
   const editor = document.getElementById('expenseEditor');
   if (!editor) return;
   editor.innerHTML = '';
-  const allHouses = [...new Set([...Object.keys(costs), ...tenants.map(t=>t.house), ...vacantRooms.map(v=>v.house)])].sort();
-  allHouses.forEach(h => {
+  const editorHouses = [...new Set([...allHouses(), ...vacantRooms.map(v=>v.house)])].sort();
+  editorHouses.forEach(h => {
     const exp = expenses[h] || {};
     const div = document.createElement('div');
     div.className = 'expense-card';
@@ -2145,18 +2461,14 @@ function exportExcel() {
   const mainData = tenants.map(t => ({'房号':t.house,'户型':t.room,'租客姓名':t.name,'手机号':t.phone||'','起租日期':t.start,'到期日期':t.end||'——','租房方式':t.paytype,'下月收租日期':t.nextrent||'','押金(已给）':t.deposit||0,'房租/月':t.rent||0,'水燃网络/月':t.util||0,'当月收款':t.received||0}));
   mainData.push({'房号':'合计','租客姓名':'共'+tenants.length+'位租客','押金(已给）':tenants.reduce((s,t)=>s+(Number(t.deposit)||0),0),'房租/月':tenants.reduce((s,t)=>s+(Number(t.rent)||0),0),'水燃网络/月':tenants.reduce((s,t)=>s+(Number(t.util)||0),0),'当月收款':tenants.reduce((s,t)=>s+(Number(t.received)||0),0)});
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mainData), '总表');
-  const houses = [...new Set(tenants.map(t=>t.house))].sort();
+  const houses = allHouses();
   const costData = houses.map(h => {
-    const group = tenants.filter(t=>t.house===h);
-    const rent = group.reduce((s,t)=>s+(Number(t.rent)||0),0);
-    const util = group.reduce((s,t)=>s+(Number(t.util)||0),0);
+    const inc = houseIncome(h);
     const costBase = Number(costs[h])||0;
     const exp = expenses[h]||{};
     const water=Number(exp.water)||0,repair=Number(exp.repair)||0,forfeit=Number(exp.forfeit)||0;
-    const houseVacant=vacantRooms.filter(v=>v.house===h);
-    const today=new Date().toISOString().slice(0,10);
-    const vacantFee=houseVacant.reduce((s,v)=>s+(v.rent/30*daysBetween(v.vacantSince,today)),0);
-    return {'房号':h,'租客数':group.length,'月租收入':rent,'水燃网络收':util,'成本租金':costBase,'水电燃气':water,'维修费':repair,'押金违约所得':forfeit,'待租费用':Math.round(vacantFee),'月净利润':rent+util-costBase-water-repair+forfeit-Math.round(vacantFee)};
+    const profit = calcProfit(inc.rent, inc.util, costBase, water, repair, forfeit);
+    return {'房号':h,'租客数':inc.cnt,'月租收入':inc.rent,'水燃网络收':inc.util,'成本租金':costBase,'水电燃气':water,'维修费':repair,'押金违约所得':forfeit,'月净利润':Math.round(profit*100)/100};
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(costData), '租金差分析');
   const costSheet = Object.entries(costs).map(([h,c]) => {const exp=expenses[h]||{};return {'房号':h,'成本租金':c,'水电燃气':Number(exp.water)||0,'维修费':Number(exp.repair)||0,'押金违约所得':Number(exp.forfeit)||0};});
@@ -2184,6 +2496,8 @@ function notify(msg, isError) {
 function refreshAll() {
   updateStats();
   updateHouseFilter();
+  updateAdvOptions();
+  updateSortIndicators();
   renderTable();
   updateVacantCount();
   checkRentReminders();
@@ -2215,7 +2529,13 @@ initDefaultData();
 loadData();
 var _allH = [...new Set([...Object.keys(costs), ...tenants.map(function(t){return t.house;})])];
 _allH.forEach(function(h) { if (!expenses[h]) expenses[h] = {water:0, repair:0, forfeit:0}; });
-initMediaDB().then(function() { refreshAll(); });
+initMediaDB().then(function() {
+  refreshAll();
+  if (window.__dataRefreshed) {
+    saveData();
+    notify('✅ 已同步最新租客数据（2026-10-23 · 共 ' + tenants.length + ' 位租客）');
+  }
+});
 
 // PWA Service Worker
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function() {}); }

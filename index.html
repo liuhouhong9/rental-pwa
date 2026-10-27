@@ -1078,13 +1078,10 @@ function saveData() {
   localStorage.setItem('rental_contracts', JSON.stringify(contracts));
 }
 
-// ============================================================
-// 初始化内置数据（数据源：租客信息_20261023.xlsx）
-// ============================================================
-const DATA_VER = '20261026-2';
+const DATA_VER = '20261027';
 
 // ============================================================
-// 初始化内置数据（数据源：租客信息_20261026-2.xlsx）
+// 初始化内置数据（数据源：租客信息_20261027.xlsx）
 // ============================================================
 function initDefaultData() {
   const defaultCosts = {
@@ -1114,7 +1111,7 @@ function initDefaultData() {
     "蔷薇西岸12-803": { water: 92.2, repair: 18.7, forfeit: 0 },
     "时代广场7-1705": { water: 92, repair: 18.7, forfeit: 0 },
     "温泉城12-1403": { water: 48, repair: 18.7, forfeit: 0 },
-    "温泉城12-203": { water: 103.35, repair: 18.7, forfeit: 1080 },
+    "温泉城12-203": { water: 103.35, repair: 18.7, forfeit: 400 },
     "温泉城15-3105": { water: 207, repair: 18.7, forfeit: 0 },
     "温泉城16-1707": { water: 48, repair: 18.7, forfeit: 0 },
     "温泉城17-1709": { water: 57, repair: 18.7, forfeit: 0 },
@@ -1133,18 +1130,18 @@ function initDefaultData() {
     {"house": "温泉城12-1403", "room": "B房间", "name": "龚红梅", "phone": "", "start": "2026-03-30", "end": "2027-04-30", "paytype": "押一付一", "nextrent": "2026-11-07", "deposit": 680, "rent": 680, "util": 100, "received": 780},
     {"house": "温泉城12-1403", "room": "A房间", "name": "黄琅", "phone": "", "start": "2026-04-06", "end": "2027-04-06", "paytype": "押一付三", "nextrent": "2027-01-06", "deposit": 450, "rent": 450, "util": 100, "received": 1650},
     {"house": "温泉城4-1206", "room": "B房间", "name": "郭战胜", "phone": "", "start": "2026-08-01", "end": "2027-03-31", "paytype": "押一付一", "nextrent": "2026-11-01", "deposit": 600, "rent": 500, "util": 85, "received": 585},
-    {"house": "温泉城17-1709", "room": "A房间", "name": "李果", "phone": "", "start": "2026-04-22", "end": "2027-02-22", "paytype": "押一付一", "nextrent": "2026-11-22", "deposit": 580, "rent": 580, "util": 100, "received": 680},
+    {"house": "温泉城17-1709", "room": "A房间", "name": "李果", "phone": "", "start": "2026-04-22", "end": "2027-02-22", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 580, "rent": 580, "util": 100, "received": 680},
     {"house": "温泉城4栋1002", "room": "B房间", "name": "余帮明", "phone": "", "start": "2026-07-03", "end": "2027-08-03", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 680, "rent": 580, "util": 100, "received": 680},
     {"house": "温泉城16-1707", "room": "D房间", "name": "叶贞爱", "phone": "", "start": "2026-10-08", "end": "2027-02-28", "paytype": "押一付一", "nextrent": "2026-11-08", "deposit": 500, "rent": 500, "util": 100, "received": 600},
     {"house": "温泉城4-1206", "room": "C房间", "name": "游强", "phone": "", "start": "2026-03-31", "end": "2027-03-31", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 580, "rent": 580, "util": 100, "received": 680},
     {"house": "温泉城4-1402", "room": "B房间", "name": "张利强", "phone": "", "start": "2025-04-30", "end": "2027-04-30", "paytype": "押一付一", "nextrent": "2026-10-30", "deposit": 550, "rent": 550, "util": 100, "received": 650},
     {"house": "温泉城4栋1002", "room": "D房间", "name": "陈灶", "phone": "", "start": "2025-10-30", "end": "2027-04-30", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 480, "rent": 480, "util": 100, "received": 580},
-    {"house": "温泉城16-1707", "room": "B房间", "name": "姚小杰", "phone": "", "start": "2026-07-26", "end": "2027-03-26", "paytype": "押一付一", "nextrent": "2026-11-26", "deposit": 680, "rent": 680, "util": 100, "received": 780},
+    {"house": "温泉城16-1707", "room": "B房间", "name": "姚小杰", "phone": "", "start": "2026-07-26", "end": "2027-03-26", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 680, "rent": 680, "util": 100, "received": 780},
     {"house": "富力尚悦居6栋10-1", "room": "A房间", "name": "江凌智", "phone": "", "start": "2026-04-30", "end": "2027-04-30", "paytype": "押一付一", "nextrent": "2026-10-30", "deposit": 480, "rent": 480, "util": 100, "received": 580},
-    {"house": "温泉城4-1206", "room": "A房间", "name": "唐锐", "phone": "", "start": "2026-07-26", "end": "2027-07-26", "paytype": "押一付一", "nextrent": "2026-11-25", "deposit": 700, "rent": 600, "util": 100, "received": 700},
+    {"house": "温泉城4-1206", "room": "A房间", "name": "唐锐", "phone": "", "start": "2026-07-26", "end": "2027-07-26", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 700, "rent": 600, "util": 100, "received": 700},
     {"house": "温泉城15-3105", "room": "B房间", "name": "马吉", "phone": "", "start": "2025-11-15", "end": "2026-11-15", "paytype": "押一付三", "nextrent": "2026-11-15", "deposit": 700, "rent": 700, "util": 100, "received": 0},
     {"house": "温泉城4栋1002", "room": "A房间", "name": "曾路", "phone": "", "start": "2026-04-28", "end": "2027-04-26", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 680, "rent": 580, "util": 100, "received": 680},
-    {"house": "邓家沟高铁还房14-2201", "room": "A房间", "name": "秦正伦", "phone": "", "start": "2026-07-01", "end": "2027-07-01", "paytype": "押一付一", "nextrent": "2026-11-30", "deposit": 400, "rent": 400, "util": 100, "received": 500},
+    {"house": "邓家沟高铁还房14-2201", "room": "A房间", "name": "秦正伦", "phone": "", "start": "2026-07-01", "end": "2027-07-01", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 530, "rent": 400, "util": 100, "received": 500},
     {"house": "蔷薇西岸12-803", "room": "C房间", "name": "张践", "phone": "", "start": "2026-07-30", "end": "2027-03-30", "paytype": "押一付一", "nextrent": "2026-10-30", "deposit": 530, "rent": 430, "util": 100, "received": 530},
     {"house": "时代广场7-1705", "room": "B房间", "name": "饶欢欢", "phone": "", "start": "2026-06-14", "end": "2027-06-14", "paytype": "押一付一", "nextrent": "2026-11-14", "deposit": 700, "rent": 600, "util": 100, "received": 700},
     {"house": "温泉城4-1406", "room": "A房间", "name": "杨方程", "phone": "", "start": "2026-09-17", "end": "2027-02-17", "paytype": "押一付一", "nextrent": "2026-11-17", "deposit": 550, "rent": 550, "util": 100, "received": 650},
@@ -1157,7 +1154,7 @@ function initDefaultData() {
     {"house": "温泉城4栋2002", "room": "D房间次卧", "name": "黎原龙", "phone": "", "start": "2026-03-15", "end": "2027-03-15", "paytype": "押一付一", "nextrent": "2026-11-15", "deposit": 450, "rent": 450, "util": 100, "received": 550},
     {"house": "温泉城16-1707", "room": "C房间", "name": "谢聪", "phone": "", "start": "2026-03-16", "end": "2026-12-15", "paytype": "押一付三", "nextrent": "", "deposit": 650, "rent": 550, "util": 100, "received": 1950},
     {"house": "黄坡坎19-402", "room": "A房间", "name": "汤宏林", "phone": "", "start": "2025-12-10", "end": "2027-10-11", "paytype": "押一付一", "nextrent": "2026-11-10", "deposit": 630, "rent": 530, "util": 100, "received": 1260},
-    {"house": "时代广场7-1705", "room": "A房间", "name": "施程", "phone": "", "start": "2026-07-17", "end": "2027-01-17", "paytype": "押一付一", "nextrent": "2026-11-17", "deposit": 580, "rent": 580, "util": 100, "received": 680},
+    {"house": "时代广场7-1705", "room": "A房间", "name": "施程", "phone": "", "start": "2026-07-17", "end": "2027-01-17", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 580, "rent": 580, "util": 100, "received": 680},
     {"house": "温泉城15-3105", "room": "A房间", "name": "陈宗春", "phone": "", "start": "2025-11-17", "end": "2026-11-17", "paytype": "押一付一", "nextrent": "2026-11-17", "deposit": 560, "rent": 480, "util": 80, "received": 560},
     {"house": "黄坡坎19-402", "room": "D房间", "name": "肖玉桃", "phone": "", "start": "2026-03-23", "end": "2027-03-23", "paytype": "押一付三", "nextrent": "2026-12-23", "deposit": 400, "rent": 400, "util": 60, "received": 1380},
     {"house": "温泉城15-3105", "room": "D房间", "name": "刘夏利", "phone": "", "start": "2025-11-29", "end": "2027-12-29", "paytype": "押一付一", "nextrent": "2026-11-06", "deposit": 600, "rent": 600, "util": 100, "received": 700},
@@ -1187,7 +1184,7 @@ function initDefaultData() {
     {"house": "富力尚悦居6栋10-1", "room": "D房间", "name": "廖国锦", "phone": "", "start": "2026-05-13", "end": "2027-05-13", "paytype": "押一付一", "nextrent": "2026-11-13", "deposit": 500, "rent": 500, "util": 100, "received": 600},
     {"house": "温泉城7栋27-5", "room": "整租2房", "name": "胥云川/王宗进", "phone": "", "start": "2026-07-05", "end": "2027-07-05", "paytype": "押一付三", "nextrent": "2027-01-05", "deposit": 1500, "rent": 1100, "util": 0, "received": 3300},
     {"house": "温泉城14栋6-3", "room": "A房间", "name": "李杰", "phone": "", "start": "2026-09-09", "end": "2027-09-09", "paytype": "押一付一", "nextrent": "2026-11-09", "deposit": 570, "rent": 470, "util": 100, "received": 570},
-    {"house": "温泉城14栋6-3", "room": "B房间", "name": "任春盈", "phone": "", "start": "2026-09-01", "end": "2027-08-31", "paytype": "押一付一", "nextrent": "", "deposit": 680, "rent": 680, "util": 70, "received": 750},
+    {"house": "温泉城14栋6-3", "room": "B房间", "name": "任春盈", "phone": "", "start": "2026-09-01", "end": "2027-08-31", "paytype": "押一付一", "nextrent": "2026-10-31", "deposit": 680, "rent": 680, "util": 70, "received": 750},
     {"house": "温泉城14栋6-3", "room": "C房间", "name": "任勇", "phone": "", "start": "2026-09-07", "end": "2027-03-07", "paytype": "押一付一", "nextrent": "2026-11-07", "deposit": 550, "rent": 550, "util": 100, "received": 650},
     {"house": "温泉城14栋6-3", "room": "C房间", "name": "周荣琨", "phone": "", "start": "2026-09-01", "end": "2027-04-30", "paytype": "押一付一", "nextrent": "2026-11-01", "deposit": 660, "rent": 580, "util": 80, "received": 660},
     {"house": "温泉城16栋31-7", "room": "A房间次卧", "name": "蒲祥", "phone": "", "start": "2026-10-09", "end": "2027-10-09", "paytype": "押一付一", "nextrent": "2026-11-09", "deposit": 400, "rent": 400, "util": 100, "received": 500},
@@ -1195,9 +1192,9 @@ function initDefaultData() {
     {"house": "温泉城16栋31-7", "room": "C房间", "name": "张洪春", "phone": "", "start": "2026-10-17", "end": "2027-02-17", "paytype": "押一付一", "nextrent": "2026-11-17", "deposit": 560, "rent": 560, "util": 100, "received": 660},
     {"house": "温泉城12-203", "room": "D房间", "name": "张雪", "phone": "", "start": "2026-09-10", "end": "2027-09-10", "paytype": "押一付一", "nextrent": "2026-11-10", "deposit": 680, "rent": 580, "util": 100, "received": 680},
     {"house": "时代广场7-1705", "room": "C房间", "name": "阳小涵", "phone": "", "start": "2026-06-10", "end": "2027-06-10", "paytype": "押一付一", "nextrent": "2026-11-15", "deposit": 780, "rent": 680, "util": 99, "received": 779},
-    {"house": "温泉城15-3105", "room": "C房间", "name": "廖圆圆", "phone": "", "start": "2026-10-23", "end": "2027-04-30", "paytype": "押一付一", "nextrent": "", "deposit": 530, "rent": 530, "util": 100, "received": 630},
-    {"house": "温泉城16栋31-7", "room": "B房间主卧飘窗", "name": "蔡璐", "phone": "", "start": "2026-10-25", "end": "2027-04-25", "paytype": "押一付一", "nextrent": "", "deposit": 500, "rent": 500, "util": 100, "received": 600},
-    {"house": "温泉城12-203", "room": "B房间", "name": "郑樾秦", "phone": "", "start": "2026-10-26", "end": "2027-04-26", "paytype": "押一付一", "nextrent": "", "deposit": 650, "rent": 650, "util": 100, "received": 750}
+    {"house": "温泉城15-3105", "room": "C房间飘窗", "name": "廖圆圆", "phone": "", "start": "2026-10-23", "end": "2027-04-30", "paytype": "押一付一", "nextrent": "2026-11-23", "deposit": 530, "rent": 530, "util": 100, "received": 630},
+    {"house": "温泉城12-203", "room": "B房间", "name": "郑樾秦", "phone": "", "start": "2026-10-26", "end": "2027-04-26", "paytype": "押一付一", "nextrent": "", "deposit": 650, "rent": 650, "util": 100, "received": 750},
+    {"house": "温泉城16栋31-7", "room": "B房间主卧飘窗", "name": "蔡璐", "phone": "", "start": "2026-10-25", "end": "2027-04-25", "paytype": "押一付一", "nextrent": "", "deposit": 500, "rent": 500, "util": 100, "received": 600}
   ];
   const defaultVacant = [
 
@@ -1208,9 +1205,7 @@ function initDefaultData() {
     {"house": "时代广场7-1705", "room": "C房间", "name": "空", "phone": "", "start": "", "end": "", "paytype": "", "nextrent": "", "deposit": 0, "rent": 550, "util": 0, "received": 0, "checkoutDate": "2026-10-22", "checkoutType": "normal", "depositReturn": 0, "utilitySettle": 0, "checkoutNote": "源表退房档案导入"},
     {"house": "温泉城12-203", "room": "D房间", "name": "空", "phone": "", "start": "", "end": "", "paytype": "", "nextrent": "", "deposit": 0, "rent": 450, "util": 0, "received": 0, "checkoutDate": "2026-10-22", "checkoutType": "normal", "depositReturn": 0, "utilitySettle": 0, "checkoutNote": "源表退房档案导入"},
     {"house": "温泉城12-203", "room": "B房间", "name": "张雪", "phone": "", "start": "", "end": "", "paytype": "", "nextrent": "", "deposit": 400, "rent": 400, "util": 0, "received": 0, "checkoutDate": "2026-10-24", "checkoutType": "breach", "depositReturn": 0, "utilitySettle": 0, "checkoutNote": "源表退房档案导入"},
-    {"house": "温泉城16栋31-7", "room": "B房间主卧飘窗", "name": "马大发", "phone": "", "start": "", "end": "", "paytype": "", "nextrent": "", "deposit": 650, "rent": 550, "util": 0, "received": 0, "checkoutDate": "2026-10-25", "checkoutType": "breach", "depositReturn": 0, "utilitySettle": 0, "checkoutNote": "源表退房档案导入"},
-    {"house": "温泉城12-203", "room": "D房间", "name": "张雪", "phone": "", "start": "", "end": "", "paytype": "", "nextrent": "", "deposit": 680, "rent": 580, "util": 0, "received": 0, "checkoutDate": "2026-10-25", "checkoutType": "breach", "depositReturn": 0, "utilitySettle": 0, "checkoutNote": "源表退房档案导入"},
-    {"house": "温泉城15栋3105", "room": "C房间飘窗", "name": "廖圆圆", "phone": "", "start": "", "end": "", "paytype": "", "nextrent": "", "deposit": 530, "rent": 530, "util": 0, "received": 0, "checkoutDate": "2026-10-25", "checkoutType": "normal", "depositReturn": 0, "utilitySettle": 0, "checkoutNote": "源表退房档案导入"}
+    {"house": "温泉城16栋31-7", "room": "B房间主卧飘窗", "name": "马大发", "phone": "", "start": "", "end": "", "paytype": "", "nextrent": "", "deposit": 650, "rent": 550, "util": 0, "received": 0, "checkoutDate": "2026-10-26", "checkoutType": "breach", "depositReturn": 0, "utilitySettle": 0, "checkoutNote": "源表退房档案导入"}
   ];
   const storedVer = localStorage.getItem('rental_dataver');
   if (storedVer !== DATA_VER) {
